@@ -1,0 +1,130 @@
+@startuml Vendorer Class Diagram
+
+!define TITLE Vendorer Gem - Class Diagram
+
+title TITLE
+
+package "Vendorer" {
+  class CLI {
+    +list()
+    +vendor(name, options)
+    +unvendor(name, options)
+    +push(name, options)
+    +status(name)
+    +version()
+    -show_gem_status(manager, name)
+  }
+
+  class GemManager {
+    -vendor_path: String
+    -gemfile_path: String
+    -git_ops: GitOperations
+    -gemfile_editor: GemfileEditor
+    +initialize(vendor_path, gemfile_path)
+    +list_vendored_gems(): Array<VendoredGem>
+    +vendor_gem(name, url, branch): VendoredGem
+    +unvendor_gem(name, keep_changes): Boolean
+    +push_gem(name, branch, message): Boolean
+    +gem_status(name): Hash
+    -ensure_vendor_directory_exists()
+  }
+
+  class GitOperations {
+    -path: String
+    +initialize(path)
+    +clone(url, destination, branch): Boolean
+    +remote_url(remote): String
+    +current_branch(): String
+    +has_changes?(): Boolean
+    +status(): Hash
+    +commit(message): Boolean
+    +push(branch, remote): Boolean
+    +create_branch(branch_name, checkout): Boolean
+    +fetch(remote): Boolean
+  }
+
+  class GemfileEditor {
+    -gemfile_path: String
+    +initialize(gemfile_path)
+    +add_vendored_gem(name, path): Boolean
+    +remove_vendored_gem(name): Boolean
+    +has_gem?(name): Boolean
+    +gem_source(name): Hash
+    +restore_gem_from_rubygems(name, version): Boolean
+    -replace_gem_declaration(content, name, path): String
+    -add_gem_declaration(content, name, path): String
+  }
+
+  class VendoredGem {
+    -name: String
+    -path: String
+    -git_ops: GitOperations
+    +initialize(name, path)
+    +exists?(): Boolean
+    +git_repository?(): Boolean
+    +remote_url(): String
+    +branch(): String
+    +has_changes?(): Boolean
+    +status(): Hash
+    +to_h(): Hash
+  }
+
+  class Error {
+    <<Exception>>
+  }
+
+  class Vendorer {
+    <<Module>>
+    +vendor_path: String
+    +gemfile_path: String
+    +configure()
+  }
+}
+
+' Relationships
+CLI --> GemManager : uses
+GemManager --> GitOperations : uses
+GemManager --> GemfileEditor : uses
+GemManager --> VendoredGem : creates
+VendoredGem --> GitOperations : uses
+CLI ..> Error : raises
+GemManager ..> Error : raises
+GitOperations ..> Error : raises
+GemfileEditor ..> Error : raises
+CLI ..> Vendorer : configures
+GemManager ..> Vendorer : reads config
+
+' Notes
+note right of CLI
+  Thor-based command-line
+  interface providing user
+  commands for vendoring
+  operations
+end note
+
+note right of GemManager
+  Orchestrates all vendoring
+  operations, coordinating
+  between Git and Gemfile
+  modifications
+end note
+
+note right of GitOperations
+  Wrapper around git commands
+  using Open3 for process
+  execution
+end note
+
+note right of GemfileEditor
+  Parses and modifies Gemfile
+  using regex patterns to
+  add/remove gem declarations
+end note
+
+note right of VendoredGem
+  Model representing a
+  vendored gem with its
+  properties and status
+end note
+
+@enduml
