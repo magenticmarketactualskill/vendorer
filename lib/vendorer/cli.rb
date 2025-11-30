@@ -124,6 +124,50 @@ module Vendorer
       exit 1
     end
     
+    desc "update", "Update all vendored gems with changes (git add, commit, push)"
+    method_option :message, type: :string, aliases: "-m", desc: "Commit message (default: 'Update vendored gems')"
+    method_option :branch, type: :string, desc: "Branch to push to (defaults to current branch for each gem)"
+    def update
+      manager = GemManager.new
+      gems = manager.list_vendored_gems
+      
+      if gems.empty?
+        say "No vendored gems found.", :yellow
+        return
+      end
+      
+      gems_with_changes = gems.select(&:has_changes?)
+      
+      if gems_with_changes.empty?
+        say "No vendored gems have uncommitted changes.", :green
+        return
+      end
+      
+      say "\nFound #{gems_with_changes.count} gem(s) with changes:", :green
+      gems_with_changes.each do |gem|
+        say "  - #{gem.name}", :cyan
+      end
+      say ""
+      
+      commit_message = options[:message] || "Update vendored gems"
+      
+      gems_with_changes.each do |gem|
+        say "Processing #{gem.name}...", :cyan
+        
+        begin
+          manager.push_gem(gem.name, branch: options[:branch], message: commit_message)
+          say "  ✓ Successfully pushed #{gem.name}", :green
+        rescue Error => e
+          say "  ✗ Failed to push #{gem.name}: #{e.message}", :red
+        end
+      end
+      
+      say "\nUpdate complete!", :green
+    rescue Error => e
+      say "Error: #{e.message}", :red
+      exit 1
+    end
+    
     desc "version", "Show vendorer version"
     def version
       say "Vendorer version #{Vendorer::VERSION}", :green
