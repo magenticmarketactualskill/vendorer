@@ -84,7 +84,7 @@ module Vendorer
     
     desc "push GEM_NAME", "Push changes in a vendored gem to remote"
     method_option :branch, type: :string, desc: "Branch to push to (defaults to current branch)"
-    method_option :message, type: :string, aliases: "-m", desc: "Commit message"
+    method_option :message, type: :string, aliases: "-m", required: true, desc: "Commit message (required)"
     def push(name)
       manager = GemManager.new
       
@@ -125,7 +125,7 @@ module Vendorer
     end
     
     desc "update", "Update all vendored gems with changes (git add, commit, push)"
-    method_option :message, type: :string, aliases: "-m", desc: "Commit message (default: 'Update vendored gems')"
+    method_option :message, type: :string, aliases: "-m", required: true, desc: "Commit message (required)"
     method_option :branch, type: :string, desc: "Branch to push to (defaults to current branch for each gem)"
     def update
       manager = GemManager.new
@@ -149,7 +149,7 @@ module Vendorer
       end
       say ""
       
-      commit_message = options[:message] || "Update vendored gems"
+      commit_message = options[:message]
       
       gems_with_changes.each do |gem|
         say "Processing #{gem.name}...", :cyan
